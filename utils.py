@@ -40,7 +40,7 @@ def get_tables_list(cursor: sqlite3.Cursor) -> list:
 def clean_dict(df_dict: dict) -> None:
     for name,table in df_dict.items():
         table.drop_duplicates(inplace=True)
-        log.info('removed duplicates')
+        log.info('Removed duplicates')
 
         if name == 'cademycode_students':
             if get_percentage(len(table[~table.job_id.isna()]),len(table)) <= 2.0:
@@ -60,7 +60,6 @@ def clean_dict(df_dict: dict) -> None:
                 log.info('Encoded sex  F >>0 ; M >>1 ; N >>2')
         elif name == 'cademycode_courses':
             if (table.career_path_id == 0).any() == False:
-                
                 new_row = pd.DataFrame({'career_path_id': [0],
                 'career_path_name': ['no career path chosen'],
                 'hours_to_complete': [0]})
