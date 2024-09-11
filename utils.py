@@ -24,7 +24,10 @@ def tables_to_dict(tables: list, cursor: sqlite3.Cursor) -> dict:
 #
 # Convert cursor data to pandas dataframe
 def load_table_to_df(cursor: sqlite3.Cursor,table_name: str) -> pd.DataFrame:
-    cursor.execute(f'''SELECT * FROM {table_name}''')
+    try:
+        cursor.execute(f'''SELECT * FROM {table_name}''')
+    except Exception as e:
+        raise RuntimeError(f"An error occurred while loading the table: {e}")
     rows, columns = cursor.fetchall(), [description[0] for description in cursor.description]
     return pd.DataFrame(rows,columns=columns)
 #  

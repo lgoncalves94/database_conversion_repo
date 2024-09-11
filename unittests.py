@@ -5,6 +5,7 @@ import random
 import os
 from utils import *
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import ArgumentError
 
 
 class Database_Conversion_Test(unittest.TestCase):
@@ -23,12 +24,29 @@ class Database_Conversion_Test(unittest.TestCase):
 			os.remove(self.database.name)
 
 
-	def test_connect_s3_database(self):
+	def test_connection_objects(self):
 		self.assertIsInstance(self.con, sqlite3.Connection)
 		self.assertIsInstance(self.curs, sqlite3.Cursor)
-		self.assertFalse(self.con.close())
-		with self.assertRaises(sqlite3.ProgrammingError):
-			self.curs.execute("SELECT 1")
+	
+	def test_wrong_query(self):
+		with self.assertRaises(sqlite3.OperationalError):
+			self.curs.execute("SELEC 1")
+
+	def test_invalid_database_type(self):
+		with self.assertRaises(TypeError):
+			conn = sqlite3.connect(8)
+			cursor = conn.cursor()
+			conn.close()
+			os.remove(8)
+
+	def test_invalid_database(self):
+		with self.assertRaises(sqlite3.OperationalError):
+			conn = sqlite3.connect('bobo.txt')
+			cursor = conn.cursor()
+			cursor.execute('SELECT * FROM table')
+		conn.close()
+		os.remove('bobo.txt')
+
 
 
 	def test_load_table_to_df(self):
@@ -36,6 +54,13 @@ class Database_Conversion_Test(unittest.TestCase):
 		expected_df = pd.DataFrame({'id': [1, 2, 3], 'value': ['A', 'B', 'C']})
 		pd.testing.assert_frame_equal(df, expected_df)
 
+	def test_invalid_table_name(self):
+		with self.assertRaises(RuntimeError):
+			load_table_to_df(self.curs, 'non_existing_table')
+
+	def test_invalid_cursor(self):
+		with self.assertRaises(AttributeError):
+			load_table_to_df(self.cursor,'test_table')
 
 	def test_get_tables_list(self):
 		self.curs.execute('CREATE TABLE test_table_2 (id INTEGER PRIMARY KEY, name TEXT)')
@@ -49,6 +74,11 @@ class Database_Conversion_Test(unittest.TestCase):
 		engine = create_engine(f'sqlite:///{db_name}.db')
 		self.assertIsInstance(engine,Engine)
 		self.assertEqual(f'Engine(sqlite:///{db_name}.db)',str(engine))
+		
+	def test_invalid_engine_str(self):
+		db_name = random.randint(0,	100)
+		with self.assertRaises(ArgumentError):
+			create_engine(db_name)
 
 class Cleaning_Test(unittest.TestCase):
 	def setUp(self):
