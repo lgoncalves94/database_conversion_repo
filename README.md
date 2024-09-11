@@ -1,1 +1,1 @@
-Narrow Use Case Cleaning 
+Narrow Usecase Cleaning 
