@@ -50,11 +50,59 @@ class Database_Conversion_Test(unittest.TestCase):
 		self.assertIsInstance(engine,Engine)
 		self.assertEqual(f'Engine(sqlite:///{db_name}.db)',str(engine))
 
+class Cleaning_Test(unittest.TestCase):
+	def setUp(self):
+		df_users = pd.DataFrame({
+		'id': [1, 2, 3],
+		'name': ['Alice', 'Bob', 'Charlie'],
+		'age': [25, 30, 35],
+		'signup_date': pd.to_datetime(['2023-01-01', '2023-06-15', '2023-08-22']),
+		'is_active': [True, False, True]
+		})
 
+		df_orders = pd.DataFrame({
+		    'order_id': [101, 102, 103],
+		    'user_id': [1, 2, 1],
+		    'amount': [250.5, 100.75, 300.0],
+		    'order_date': pd.to_datetime(['2023-07-01', '2023-07-03', '2023-07-10']),
+		    'status': ['shipped', 'delivered', 'pending']
+		})
 
+		df_products = pd.DataFrame({
+		    'product_id': [1, 2, 3,3],
+		    'product_name': ['Laptop', 'Headphones', 'Monitor','Monitor'],
+		    'price': [1000.00, 150.00, 300.00,300.00],
+		    'in_stock': [True, True, False,False]
+		})
+		self.test_dict = {
+		    'users': df_users,
+		    'orders': df_orders,
+		    'products': df_products
+		}
+
+	def tearDown(self):
+		del self.test_dict
+
+	def test_drop_duplicates(self):
+		test_df = self.test_dict['products']
+		test_df.drop_duplicates(inplace=True)
+		expected_df = pd.DataFrame({
+		    'product_id': [1, 2, 3],
+		    'product_name': ['Laptop', 'Headphones', 'Monitor'],
+		    'price': [1000.00, 150.00, 300.00],
+		    'in_stock': [True, True, False]
+		})
+		pd.testing.assert_frame_equal(test_df,expected_df)	
+
+	def test_create_db(self):
+		engine = create_engine('sqlite:///test_database.db')
+		self.assertIsInstance(engine,Engine)
+		del engine			
 
 if __name__ == '__main__':
     unittest.main()
+
+
 
 
 
