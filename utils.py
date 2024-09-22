@@ -1,5 +1,5 @@
 import pandas as pd
-import sqlite3 
+import sqlite3 as s3
 from logging_config import *
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -9,34 +9,37 @@ import typing as t
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 import csv 
-
 # 
 #
-def connect_s3_database(file_name: str) -> t.Tuple[sqlite3.Connection, sqlite3.Cursor]:
-    con = sqlite3.connect(file_name)
+def connect_s3_database(filename: str) -> t.Tuple[s3.Connection, s3.Cursor]:
+    try:
+        con = s3.connect(filename)
+    except s3.ERROR as e:
+        log.error(f'Could not connect to database:\n\n{e}')
     curs = con.cursor()
     return con,curs
 #
 # Make pandas dictionary {table_name : pd.DataFrame(table)}
-def tables_to_dict(tables: list, cursor: sqlite3.Cursor) -> dict:
+def tables_to_dict(tables: list, cursor: s3.Cursor) -> dict:
     dict = {str(table): load_table_to_df(cursor,table) for table in tables}
     return dict
 #
 # Convert cursor data to pandas dataframe
-def load_table_to_df(cursor: sqlite3.Cursor,table_name: str) -> pd.DataFrame:
+def load_table_to_df(cursor: s3.Cursor,table_name: str) -> pd.DataFrame:
     try:
         cursor.execute(f'''SELECT * FROM {table_name}''')
     except Exception as e:
+        log.error('Error loading table:\n\n{e}')
         raise RuntimeError(f"An error occurred while loading the table: {e}")
     rows, columns = cursor.fetchall(), [description[0] for description in cursor.description]
     return pd.DataFrame(rows,columns=columns)
 #  
 # Return list of all tablenames from cursor
-def get_tables_list(cursor: sqlite3.Cursor) -> list:
+def get_tables_list(cursor: s3.Cursor) -> list:
     try:
         cursor.execute('SELECT name FROM sqlite_master WHERE type= "table"')
     except sqlite3.ERROR as e:
-        print('Error!:\n{e}')
+        log.error('Error getting tablenames from master:\n\n{e}')
     return [table[0] for table in cursor.fetchall()]
 # 
 # General cleaning for all tables 
@@ -51,7 +54,7 @@ def clean_dict(df_dict: dict) -> None:
                 log.info('Excluding rows with missing job_id_data under 2%')
                 table['job_id'] = pd.to_numeric(table['job_id'], errors='coerce').astype('Int8')
                 
-                log.info('dob datetime')
+                log.info('dob to datetime')
                 table['dob'] = pd.to_datetime(table['dob']).dt.strftime('%Y-%m-%d')
 
                 log.info('fillna in time_spent_hrs with median')
@@ -79,7 +82,10 @@ def get_percentage(part: int, whole: int) -> float:
 def create_db() -> Engine:
     print('How do you want to call this database? ')
     db_name = input('>> ')
-    engine = create_engine(f'sqlite:///{db_name}.db')
+    try:
+        engine = create_engine(f'sqlite:///{db_name}.db')
+    except s3.ERROR as e:
+        log.error('Error creating database:\n\n{e}')
     return engine
 
 def populate_database(table_name: str, db_dict: dict , engine: Engine) -> None :
