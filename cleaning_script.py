@@ -11,7 +11,6 @@ con,curs = connect_s3_database('cademycode.db')
 tables = get_tables_list(curs)
 db = tables_to_dict(tables,curs)
 con.close()
-
 # Clean tables & get output
 clean_dict(db)
 get_output(tables,db)

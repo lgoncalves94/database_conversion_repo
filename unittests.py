@@ -54,6 +54,7 @@ class Database_Conversion_Test(unittest.TestCase):
 		expected_df = pd.DataFrame({'id': [1, 2, 3], 'value': ['A', 'B', 'C']})
 		pd.testing.assert_frame_equal(df, expected_df)
 
+
 	def test_invalid_table_name(self):
 		with self.assertRaises(RuntimeError):
 			load_table_to_df(self.curs, 'non_existing_table')

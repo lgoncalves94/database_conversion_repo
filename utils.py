@@ -29,7 +29,6 @@ def load_table_to_df(cursor: s3.Cursor,table_name: str) -> pd.DataFrame:
     try:
         cursor.execute(f'''SELECT * FROM {table_name}''')
     except Exception as e:
-        log.error('Error loading table:\n\n{e}')
         raise RuntimeError(f"An error occurred while loading the table: {e}")
     rows, columns = cursor.fetchall(), [description[0] for description in cursor.description]
     return pd.DataFrame(rows,columns=columns)
